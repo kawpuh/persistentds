@@ -1,7 +1,7 @@
 import math
 
-debug_print = print
-# debug_print = lambda _ : 0
+# debug_print = print
+debug_print = lambda _ : 0
 
 
 class Empty:
@@ -47,7 +47,7 @@ class Node:
         return ret
 
 
-class BitTrie:
+class PersistentBitTrie:
 
     def __init__(self, n=3):
         assert n > 1
@@ -60,8 +60,7 @@ class BitTrie:
         return str(self.root)
 
     def append(self, val):
-        print(f"append {val}")
-        ret = BitTrie(self.bits)
+        ret = PersistentBitTrie(self.bits)
         ret.size = self.size + 1
 
         # overflow root?
@@ -107,20 +106,12 @@ class BitTrie:
 
         return ret
 
-    # def lookup(self, key):
-    #     # FIXME: untested code copied from pseudocode
-    #     node = self.root
-    #     for level in range(self.shift, 0, -self.branching):
-    #         node = node[(key >> level) & self.mask]
-    #     return node
-
-    # def __str__(self):
-    #     arr = []
-    #     stack = [self.root]
-    #     while len(stack) > 0:
-    #         walk = stack.pop()
-    #         if walk.
-
+    def nth(self, key):
+        node = self.root
+        depth = int(math.log(self.size, 2**self.bits)) # depth
+        for key_shift in range(depth*self.bits, -self.bits, -self.bits):
+            node = node[(key >> key_shift) & self.mask]
+        return node
 
 def main():
     pass

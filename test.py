@@ -1,23 +1,26 @@
 from functools import reduce
 import vec
 
-def debug_test_conj():
-    print("[3]:", vec.BitTrie().append(3))
+def debug_test_append():
+    print("[3]:", vec.PersistentBitTrie().append(3))
     print()
-    print("Empty Trie:", vec.BitTrie())
+    print("Empty Trie:", vec.PersistentBitTrie())
     print()
-    print("[3,4]:", vec.BitTrie().append(3).append(4))
+    print("[3,4]:", vec.PersistentBitTrie().append(3).append(4))
     print()
-    print("[1..30]", reduce(lambda trie, i: trie.conj(i), range(100), vec.BitTrie()))
+    print("[1..30]", reduce(lambda trie, i: trie.append(i), range(100), vec.PersistentBitTrie()))
     print()
 
 
-def debug_test_get():
-    # vec.BitTrie()._lookup(3)
+def debug_test_nth():
+    x = reduce(lambda trie, i: trie.append(i), range(100), vec.PersistentBitTrie())
+    print("1..99")
+    [print(x.nth(i)) for i in range(100)]
     pass
 
 def main():
-    debug_test_conj()
+    debug_test_append()
+    debug_test_nth()
 
 
 main()
