@@ -1,9 +1,23 @@
 from functools import reduce
 import vec
 
-x = vec.BitTrie().push(3).push(4).push(5).push(6).push(6).push(7)
+def debug_test_conj():
+    print("[3]:", vec.BitTrie().append(3))
+    print()
+    print("Empty Trie:", vec.BitTrie())
+    print()
+    print("[3,4]:", vec.BitTrie().append(3).append(4))
+    print()
+    print("[1..30]", reduce(lambda trie, i: trie.conj(i), range(100), vec.BitTrie()))
+    print()
 
-print(x)
-print(x.push(8))
-print(x)
-print(reduce(lambda trie, i: trie.push(i), range(10), vec.BitTrie()))
+
+def debug_test_get():
+    # vec.BitTrie()._lookup(3)
+    pass
+
+def main():
+    debug_test_conj()
+
+
+main()

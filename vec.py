@@ -1,5 +1,8 @@
 import math
 
+debug_print = print
+# debug_print = lambda _ : 0
+
 
 class Empty:
     pass
@@ -30,20 +33,12 @@ class Node:
     def append(self, val):
         "Inserts val into first empty slot, fails if node is full"
         if len(self.children) >= self.n:
-            print("pushing into a full node")
+            print(f"append into a full node")
             assert 0
         self.children.append(val)
 
     def peek(self):
         return self.children[-1]
-    # def peek(self):
-    #     "Return val in last non-empty slot or Empty otherwise"
-    #     ret = Empty
-    #     for child in self.children:
-    #         if child is Empty:
-    #             return ret
-    #         ret = child
-    #     return ret
 
     def copy(self):
         ret = Node(self.n)
@@ -54,72 +49,63 @@ class Node:
 
 class BitTrie:
 
-    def __init__(self, n=5):
+    def __init__(self, n=3):
+        assert n > 1
         self.size = 0
-        self.n = n
-        self.mask = (1 << self.n) - 1
+        self.bits = n
+        self.mask = (1 << self.bits) - 1
         self.root = None
 
     def __repr__(self):
         return str(self.root)
 
-    def push(self, val):
-        ret = BitTrie(self.n)
+    def append(self, val):
+        print(f"append {val}")
+        ret = BitTrie(self.bits)
         ret.size = self.size + 1
-        if self.root is None:
-            ret.root = Node(self.n)
-            ret.root.append(val)
-            ret.root.leaf = True
-            return ret
-        walk_src = self.root
 
-        # check if we're full
-        # print(f"n: {self.n} size: {self.size} res: {math.log(self.size, self.n)}")
-        if math.log(self.size, self.n).is_integer() and self.n != 1 and self.size != 1:
+        # overflow root?
+        if self.size == 0 or math.log(self.size, 2**self.bits).is_integer() and self.size != 1:
+            debug_print(f"append: growing from root on {val}")
             # add a new node at root for space, then create a path to our leaf
-            print(f"here {val}")
-            ret.root = Node(self.n)
-            ret.root.append(self.root)
-
+            ret.root = Node(2**self.bits)
             walk = ret.root
-            depth = 1
-            goal_depth = math.ceil(math.log(self.size + 1, self.n))
-            for _ in range(depth, goal_depth):
-                walk.append(Node(self.n))
-                walk = walk.peek()
+            if self.size != 0:
+                ret.root.append(self.root)
+                goal_depth = math.ceil(math.log(self.size + 1, self.mask))
+                for _ in range(1, goal_depth):
+                    walk.append(Node(2**self.bits))
+                    walk = walk.peek()
             walk.leaf = True
             walk.append(val)
             return ret
 
-        walk_end = self.root
-        while not walk_end.leaf:
-            walk_end = walk_end.peek()
+        # take the path down to our key, copying or creating nodes along the way
+        depth = int(math.log(self.size, 2**self.bits)) # depth
+        key = self.size
+        ret.root = self.root.copy()
+        walkret = ret.root
+        walkself = self.root
+        for key_shift in range(depth*self.bits, 0, -self.bits):
+            child_idx = (key >> key_shift) & self.mask
+            # print(f"key: {key}, key_shift: {key_shift}")
+            # print(f"idx: {child_idx}, len: {len(walkself)}")
+            if child_idx >= len(walkself):
+                # create nodes the rest of the way down
+                debug_print(f"append: growing from child on {val}")
+                for _ in range(key_shift, 0, -self.bits):
+                    walkret.append(Node(2**self.bits))
+                    walkret = walkret.peek()
+                walkret.leaf = True
+                break
+            else:
+                # copy node and continue
+                walkret[child_idx] = walkself[child_idx].copy()
+                walkret, walkself = walkret[child_idx], walkself[child_idx]
+        # we should know the idx, but easier to just append
+        walkret.append(val)
 
-        walk_src = self.root
-        walk_dest = walk_src.copy()
-        ret.root = walk_dest
-        # See if we'll have room in a leaf
-        if not walk_end.is_full():
-            # TODO: copy path and insert
-            while not walk_dest.leaf:
-                walk_dest[-1] = walk_src.peek().copy()
-                walk_dest, walk_src = walk_dest.peek(), walk_src.peek()
-            walk_dest.append(val)
-            return ret
-        else:
-            # We'll have to branch and create a new path before the leaf
-            depth = 0
-            goal_depth = math.ceil(math.log(self.size + 1, self.n))
-            while walk_dest.is_full():
-                depth += 1
-                walk_dest[-1] = walk_src.peek().copy()
-                walk_dest, walk_src = walk_dest.peek(), walk_src.peek()
-            for _ in range(depth, goal_depth):
-                walk_dest.append(Node(self.n))
-                walk_dest = walk_dest.peek()
-            walk_dest.leaf = True
-            walk_dest.append(val)
-            return ret
+        return ret
 
     # def lookup(self, key):
     #     # FIXME: untested code copied from pseudocode
