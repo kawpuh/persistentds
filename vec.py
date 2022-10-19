@@ -40,6 +40,9 @@ class Node:
     def peek(self):
         return self.children[-1]
 
+    def pop(self):
+        return self.children.pop()
+
     def copy(self):
         ret = Node(self.n)
         ret.leaf = self.leaf
@@ -59,13 +62,13 @@ class PersistentBitTrie:
     def __repr__(self):
         return str(self.root)
 
-    def append(self, val):
+    def conj(self, val):
         ret = PersistentBitTrie(self.bits)
         ret.size = self.size + 1
 
         # overflow root?
         if self.size == 0 or math.log(self.size, 2**self.bits).is_integer() and self.size != 1:
-            debug_print(f"append: growing from root on {val}")
+            debug_print(f"conj: growing from root on {val}")
             # add a new node at root for space, then create a path to our leaf
             ret.root = Node(2**self.bits)
             walk = ret.root
@@ -91,7 +94,7 @@ class PersistentBitTrie:
             # print(f"idx: {child_idx}, len: {len(walkself)}")
             if child_idx >= len(walkself):
                 # create nodes the rest of the way down
-                debug_print(f"append: growing from child on {val}")
+                debug_print(f"conj: growing from child on {val}")
                 for _ in range(key_shift, 0, -self.bits):
                     walkret.append(Node(2**self.bits))
                     walkret = walkret.peek()
@@ -103,7 +106,6 @@ class PersistentBitTrie:
                 walkret, walkself = walkret[child_idx], walkself[child_idx]
         # we should know the idx, but easier to just append
         walkret.append(val)
-
         return ret
 
     def nth(self, key):
@@ -112,6 +114,52 @@ class PersistentBitTrie:
         for key_shift in range(depth*self.bits, -self.bits, -self.bits):
             node = node[(key >> key_shift) & self.mask]
         return node
+
+    def disj(self):
+        ret = PersistentBitTrie(self.bits)
+        ret.size = self.size - 1
+
+        # overflow root?
+        if ret.size == 0 or math.log(ret.size, 2**self.bits).is_integer() and ret.size != 1:
+            debug_print(f"disj: truncating from root")
+            # remove node at root, promote left child
+            if ret.size == 0:
+                ret.root = None
+            else:
+                ret.root = self.root[0].copy()
+            return ret
+
+        # take the path down to our key, copying nodes along the way
+        rem_key = ret.size
+        key = ret.size - 1
+        depth = int(math.log(key, 2**self.bits)) # depth, should be same for both keys
+        ret.root = self.root.copy()
+        walkret = ret.root
+        walkself = self.root
+        removed = False
+        for key_shift in range(depth*self.bits, 0, -self.bits):
+            child_idx = (key >> key_shift) & self.mask
+            rem_child_idx = (rem_key >> key_shift) & self.mask
+            if child_idx != rem_child_idx:
+                # Truncate path, creating nodes for remaining path
+                debug_print(f"disj: truncating from child")
+                walkret.pop()
+                for _ in range(key_shift-self.bits, 0, -self.bits):
+                    walkret[child_idx] = walkself[child_idx].copy()
+                    walkret, walkself = walkret[child_idx], walkself[child_idx]
+                removed = True
+                break
+            else:
+                # copy node and continue
+                walkret[child_idx] = walkself[child_idx].copy()
+                walkret, walkself = walkret[child_idx], walkself[child_idx]
+        # we should know the idx, but easier to just append
+        if not removed:
+            walkret.pop()
+        return ret
+
+    def peek(self):
+        pass
 
 def main():
     pass
