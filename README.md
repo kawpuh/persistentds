@@ -1,7 +1,7 @@
 # Notes
 ## What?
 - Playing around with implementing clojure's persistent data structures in python
-- Most of the relevant implementation for vector is [https://github.com/clojure/clojure/blob/master/src/jvm/clojure/lang/PersistentVector.java](here.)
+- Most of the relevant implementation for vector is [here](https://github.com/clojure/clojure/blob/master/src/jvm/clojure/lang/PersistentVector.java)
 
 ## Ops
 - update:
