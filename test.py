@@ -41,14 +41,18 @@ def debug_test_disj():
                vec.PersistentBitTrie()).disj())
     print()
 
+
 def viz_graph(nodes, edges):
     g = graphviz.Digraph(node_attr={"shape": "record"},
-                         engine="osage")
-    for node in nodes:
-        g.node(*node)
+                         graph_attr={"rankdir": "LR"},
+                         filename="graph",
+                         format="webp")
+    for node_args, node_kwargs in nodes:
+        g.node(*node_args, **node_kwargs)
     for edge in set(edges):
         g.edge(*edge)
     g.view()
+
 
 def debug_test_graphviz():
     nodes, edges = [], []
@@ -60,7 +64,6 @@ def debug_test_graphviz():
         vs.append(vi)
     viz_graph(nodes, edges)
     print(vs)
-
 
 
 def main():

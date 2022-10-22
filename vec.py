@@ -28,13 +28,24 @@ class Node:
         return f"{'Leaf' if self.leaf else ''}Node[{', '.join(repr(child) for child in self.children)}]"
 
     def walk_graph(self, nodes, edges):
-        nodes.append(
-            (str(id(self)), "|{ " + str(id(self)) + "|{ " +
-             "|".join(f"<f{i}> {i}" for i in range(self.n)) + "}|" + "}|"))
+        # if self.leaf:
+        if self.n == len(self.children):
+            nodes.append(((
+                str(id(self)),
+                "|{ " + str(id(self)) + "|{ " +
+                "|".join(f"<f{i}> {i}" for i in range(self.n)) + "}|" + "}|",
+            ), {
+                "style": "filled"
+            }))
+        else:
+            nodes.append(
+                ((str(id(self)), "|{ " + str(id(self)) + "|{ " +
+                  "|".join(f"<f{i}> {i}"
+                           for i in range(self.n)) + "}|" + "}|"), {}))
         for i, child in enumerate(self.children):
             edges.append((f"{id(self)}:f{i}", str(id(child))))
             if self.leaf:
-                nodes.append((str(id(child)), str(child)))
+                nodes.append(((str(id(child)), str(child)), {}))
             else:
                 child.walk_graph(nodes, edges)
 
@@ -76,6 +87,7 @@ class PersistentBitTrie:
     def add_to_graph(self, nodes, edges):
         if self.root is not None:
             self.root.walk_graph(nodes, edges)
+            edges.append((str(self), str(id(self.root))))
             return nodes, edges
             # print(f"nodes: {nodes}\n\nedges:{edges}\n\n")
 
