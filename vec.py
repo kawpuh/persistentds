@@ -27,16 +27,34 @@ class Node:
     def __repr__(self):
         return f"{'Leaf' if self.leaf else ''}Node[{', '.join(repr(child) for child in self.children)}]"
 
-    def walk_graph(self, nodes, edges):
+    def get(self, i, default=None):
+        if i >= len(self.children):
+            return default
+        return self.children[i]
+
+    def walk_graph(self, nodes, edges, value_type):
         if self.leaf:
-            # if self.n == len(self.children):
-            nodes.append(((
-                str(id(self)),
-                "|{ " + str(id(self)) + "|{ " +
-                "|".join(f"<f{i}> {i}" for i in range(self.n)) + "}|" + "}|",
-            ), {
-                "style": "filled"
-            }))
+            if value_type:
+                nodes.append(((
+                    str(id(self)),
+                    "|{ " + str(id(self)) + "|{ " +
+                    "|".join(f"<f{i}> {i}"
+                             for i in range(self.n)) + "}|" + "{" +
+                    "|".join(str(self.get(i, '?'))
+                             for i in range(self.n)) + "}" + "}|",
+                ), {
+                    "style": "filled"
+                }))
+                return
+            else:
+                nodes.append(((
+                    str(id(self)),
+                    "|{ " + str(id(self)) + "|{ " +
+                    "|".join(f"<f{i}> {i}"
+                             for i in range(self.n)) + "}|" + "}|",
+                ), {
+                    "style": "filled"
+                }))
         else:
             nodes.append(
                 ((str(id(self)), "|{ " + str(id(self)) + "|{ " +
@@ -47,7 +65,7 @@ class Node:
             if self.leaf:
                 nodes.append(((str(id(child)), str(child)), {}))
             else:
-                child.walk_graph(nodes, edges)
+                child.walk_graph(nodes, edges, value_type)
 
     def is_full(self):
         return len(self.children) == self.n
@@ -55,7 +73,7 @@ class Node:
     def append(self, val):
         "Inserts val into first empty slot, fails if node is full"
         if len(self.children) >= self.n:
-            print(f"append into a full node")
+            print(f"append into a full node: {val}")
             assert 0
         self.children.append(val)
 
@@ -86,9 +104,9 @@ class PersistentBitTrie:
             return "LeafNode[]"
         return str(self.root)
 
-    def add_to_graph(self, nodes, edges):
+    def add_to_graph(self, nodes, edges, value_type=True):
         if self.root is not None:
-            self.root.walk_graph(nodes, edges)
+            self.root.walk_graph(nodes, edges, value_type)
             edges.append((str(self), str(id(self.root))))
             return nodes, edges
             # print(f"nodes: {nodes}\n\nedges:{edges}\n\n")
@@ -168,14 +186,14 @@ class PersistentBitTrie:
                 walk_ret = walk_ret[lvl_key]
         return ret
 
-    def disj(self):
+    def pop(self):
         ret = PersistentBitTrie(self.bits)
         ret.size = self.size - 1
 
         # overflow root?
         if ret.size == 0 or math.log(ret.size, 2**
                                      self.bits).is_integer() and ret.size != 1:
-            debug_print(f"disj: truncating from root")
+            debug_print(f"pop: truncating from root")
             # remove node at root, promote left child
             if ret.size == 0:
                 ret.root = None
@@ -197,7 +215,7 @@ class PersistentBitTrie:
             rem_child_idx = (rem_key >> key_shift) & self.mask
             if child_idx != rem_child_idx:
                 # Truncate path, creating nodes for remaining path
-                debug_print(f"disj: truncating from child")
+                debug_print(f"pop: truncating from child")
                 walk_ret.pop()
                 for _ in range(key_shift - self.bits, 0, -self.bits):
                     walk_ret[child_idx] = walk_self[child_idx].copy()
