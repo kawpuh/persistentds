@@ -4,6 +4,7 @@ import vec
 
 
 def debug_test_conj():
+    # TODO: write asserts
     print("[3]:", vec.PersistentBitTrie().conj(3))
     print()
     print("Empty Trie:", vec.PersistentBitTrie())
@@ -18,6 +19,7 @@ def debug_test_conj():
 
 
 def debug_test_nth():
+    # TODO: write asserts
     x = reduce(lambda trie, i: trie.conj(i), range(100),
                vec.PersistentBitTrie())
     print("1..99")
@@ -26,17 +28,21 @@ def debug_test_nth():
 
 
 def debug_test_disj():
-    print("[]:", vec.PersistentBitTrie().conj(3).disj())
+    print("[]")
+    assert str(vec.PersistentBitTrie().conj(3).disj()) == "LeafNode[]"
     print()
-    print("[3,4]:", vec.PersistentBitTrie().conj(3).conj(4).conj(5).disj())
+    print("[3,4]")
+    assert str(vec.PersistentBitTrie().conj(3).conj(4).conj(
+        5).disj()) == "LeafNode[3, 4]"
     print()
+    # TODO: write asserts
     print(
-        "[1..95]",
+        "[0..95]",
         reduce(lambda trie, i: trie.conj(i), range(101),
                vec.PersistentBitTrie()).disj().disj().disj().disj().disj())
     print()
     print(
-        "[1..16]",
+        "[0..15]",
         reduce(lambda trie, i: trie.conj(i), range(17),
                vec.PersistentBitTrie()).disj())
     print()
@@ -45,7 +51,7 @@ def debug_test_disj():
 def viz_graph(nodes, edges):
     g = graphviz.Digraph(node_attr={"shape": "record"},
                          graph_attr={"rankdir": "LR"},
-                         filename="graph",
+                         filename="graph.gv",
                          format="webp")
     for node_args, node_kwargs in nodes:
         g.node(*node_args, **node_kwargs)
@@ -56,18 +62,58 @@ def viz_graph(nodes, edges):
 
 def debug_test_graphviz():
     nodes, edges = [], []
-    vi = vec.PersistentBitTrie()
+    vi = vec.PersistentBitTrie(bits=2)
     vs = [vi]
     for i in range(17):
-        vi = vi.conj(i)
+        vi = vi.conj((i, ))
         vi.add_to_graph(nodes, edges)
         vs.append(vi)
     viz_graph(nodes, edges)
     print(vs)
 
 
+def debug_test_nth():
+    x = reduce(lambda trie, i: trie.conj(i), range(101),
+               vec.PersistentBitTrie()).disj().disj().disj().disj().disj()
+    print("Testing nth for [0..95] vec")
+    # "[0..95]",
+    for i in range(95):
+        if not x.nth(i) == i:
+            print(f"{x.nth(i)} and {i+1}")
+            return
+    print("Success")
+
+
+def debug_test_update():
+    x = reduce(lambda trie, i: trie.conj(i), range(101),
+               vec.PersistentBitTrie()).disj().disj().disj().disj().disj()
+    print("Updating [0..95] vec @ 55 to 80")
+    assert x.nth(55) == 55
+    y = x.update(55, 80)
+    if not y.nth(55) == 80:
+        print(f"{y.nth(55)} and {80}")
+        return
+    print("Success")
+
+    print("Flipping [0..95]")
+    z = x.update(0, 0)
+    for i, val in enumerate(range(95, -1, -1)):
+        z = z.update(i, val)
+    for i, val in enumerate(range(95, -1, -1)):
+        assert z.nth(i) == val
+    print(z)
+
+
+def debug_test_suite():
+    debug_test_conj()
+    debug_test_nth()
+    debug_test_disj()
+    debug_test_nth()
+    debug_test_update()
+
+
 def main():
-    debug_test_graphviz()
+    debug_test_disj()
 
 
 main()

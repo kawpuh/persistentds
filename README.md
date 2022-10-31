@@ -16,10 +16,6 @@
 - disj:
     - three cases corresponding to undoing the three cases in append
 
-## Indexing
-
-
-
 ## Misc
 - persistent bit-partitioned vector trie
 - balanced ordered tree

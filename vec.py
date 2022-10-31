@@ -28,8 +28,8 @@ class Node:
         return f"{'Leaf' if self.leaf else ''}Node[{', '.join(repr(child) for child in self.children)}]"
 
     def walk_graph(self, nodes, edges):
-        # if self.leaf:
-        if self.n == len(self.children):
+        if self.leaf:
+            # if self.n == len(self.children):
             nodes.append(((
                 str(id(self)),
                 "|{ " + str(id(self)) + "|{ " +
@@ -82,6 +82,8 @@ class PersistentBitTrie:
         self.root = None
 
     def __repr__(self):
+        if self.root is None:
+            return "LeafNode[]"
         return str(self.root)
 
     def add_to_graph(self, nodes, edges):
@@ -145,6 +147,27 @@ class PersistentBitTrie:
             node = node[(key >> key_shift) & self.mask]
         return node
 
+    def update(self, key, val):
+        ret = PersistentBitTrie(self.bits)
+        ret.size = self.size
+        if val >= ret.size:
+            print(f"val >= ret.size\n{val} >= {ret.size}")
+            raise IndexError
+        walk_self = self.root
+        walk_ret = walk_self.copy()
+        ret.root = walk_ret
+
+        depth = int(math.log(self.size, 2**self.bits))  # depth
+        for key_shift in range(depth * self.bits, -self.bits, -self.bits):
+            lvl_key = (key >> key_shift) & self.mask
+            walk_self = walk_self[lvl_key]
+            if key_shift == 0:
+                walk_ret[lvl_key] = val
+            else:
+                walk_ret[lvl_key] = walk_self.copy()
+                walk_ret = walk_ret[lvl_key]
+        return ret
+
     def disj(self):
         ret = PersistentBitTrie(self.bits)
         ret.size = self.size - 1
@@ -166,8 +189,8 @@ class PersistentBitTrie:
         depth = int(math.log(
             key, 2**self.bits))  # depth, should be same for both keys
         ret.root = self.root.copy()
-        walkret = ret.root
-        walkself = self.root
+        walk_ret = ret.root
+        walk_self = self.root
         removed = False
         for key_shift in range(depth * self.bits, 0, -self.bits):
             child_idx = (key >> key_shift) & self.mask
@@ -175,19 +198,20 @@ class PersistentBitTrie:
             if child_idx != rem_child_idx:
                 # Truncate path, creating nodes for remaining path
                 debug_print(f"disj: truncating from child")
-                walkret.pop()
+                walk_ret.pop()
                 for _ in range(key_shift - self.bits, 0, -self.bits):
-                    walkret[child_idx] = walkself[child_idx].copy()
-                    walkret, walkself = walkret[child_idx], walkself[child_idx]
+                    walk_ret[child_idx] = walk_self[child_idx].copy()
+                    walk_ret, walk_self = walk_ret[child_idx], walk_self[
+                        child_idx]
                 removed = True
                 break
             else:
                 # copy node and continue
-                walkret[child_idx] = walkself[child_idx].copy()
-                walkret, walkself = walkret[child_idx], walkself[child_idx]
+                walk_ret[child_idx] = walk_self[child_idx].copy()
+                walk_ret, walk_self = walk_ret[child_idx], walk_self[child_idx]
         # we should know the idx, but easier to just append
         if not removed:
-            walkret.pop()
+            walk_ret.pop()
         return ret
 
     def peek(self):
