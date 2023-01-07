@@ -32,41 +32,6 @@ class Node:
             return default
         return self.children[i]
 
-    def walk_graph(self, nodes, edges, value_type):
-        if self.leaf:
-            if value_type:
-                nodes.append(((
-                    str(id(self)),
-                    "|{ " + str(id(self)) + "|{ " +
-                    "|".join(f"<f{i}> {i}"
-                             for i in range(self.n)) + "}|" + "{" +
-                    "|".join(str(self.get(i, '?'))
-                             for i in range(self.n)) + "}" + "}|",
-                ), {
-                    "style": "filled"
-                }))
-                return
-            else:
-                nodes.append(((
-                    str(id(self)),
-                    "|{ " + str(id(self)) + "|{ " +
-                    "|".join(f"<f{i}> {i}"
-                             for i in range(self.n)) + "}|" + "}|",
-                ), {
-                    "style": "filled"
-                }))
-        else:
-            nodes.append(
-                ((str(id(self)), "|{ " + str(id(self)) + "|{ " +
-                  "|".join(f"<f{i}> {i}"
-                           for i in range(self.n)) + "}|" + "}|"), {}))
-        for i, child in enumerate(self.children):
-            edges.append((f"{id(self)}:f{i}", str(id(child))))
-            if self.leaf:
-                nodes.append(((str(id(child)), str(child)), {}))
-            else:
-                child.walk_graph(nodes, edges, value_type)
-
     def is_full(self):
         return len(self.children) == self.n
 
@@ -103,13 +68,6 @@ class PersistentBitTrie:
         if self.root is None:
             return "LeafNode[]"
         return str(self.root)
-
-    def add_to_graph(self, nodes, edges, value_type=True):
-        if self.root is not None:
-            self.root.walk_graph(nodes, edges, value_type)
-            edges.append((str(self), str(id(self.root))))
-            return nodes, edges
-            # print(f"nodes: {nodes}\n\nedges:{edges}\n\n")
 
     def conj(self, val):
         ret = PersistentBitTrie(self.bits)
@@ -234,6 +192,50 @@ class PersistentBitTrie:
 
     def peek(self):
         pass
+
+
+def walk_graph(trie_node, nodes, edges, value_type):
+    if trie_node.leaf:
+        if value_type:
+            nodes.append(((
+                str(id(trie_node)),
+                "|{ " + str(id(trie_node)) + "|{ " +
+                "|".join(f"<f{i}> {i}"
+                         for i in range(trie_node.n)) + "}|" + "{" + "|".join(
+                             str(trie_node.get(i, '?'))
+                             for i in range(trie_node.n)) + "}" + "}|",
+            ), {
+                "style": "filled"
+            }))
+            return
+        else:
+            nodes.append(((
+                str(id(trie_node)),
+                "|{ " + str(id(trie_node)) + "|{ " +
+                "|".join(f"<f{i}> {i}"
+                         for i in range(trie_node.n)) + "}|" + "}|",
+            ), {
+                "style": "filled"
+            }))
+    else:
+        nodes.append(
+            ((str(id(trie_node)), "|{ " + str(id(trie_node)) + "|{ " +
+              "|".join(f"<f{i}> {i}"
+                       for i in range(trie_node.n)) + "}|" + "}|"), {}))
+    for i, child in enumerate(trie_node.children):
+        edges.append((f"{id(trie_node)}:f{i}", str(id(child))))
+        if trie_node.leaf:
+            nodes.append(((str(id(child)), str(child)), {}))
+        else:
+            walk_graph(child, nodes, edges, value_type)
+
+
+def add_to_graph(vec, nodes, edges, value_type=True):
+    if vec.root is not None:
+        walk_graph(vec.root, nodes, edges, value_type)
+        edges.append((str(vec), str(id(vec.root))))
+        return nodes, edges
+        # print(f"nodes: {nodes}\n\nedges:{edges}\n\n")
 
 
 def main():

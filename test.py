@@ -69,7 +69,7 @@ def debug_test_graphviz():
     vs = [vi]
     for i in range(17):
         vi = vi.conj(i)
-        vi.add_to_graph(nodes, edges, True)
+        vec.add_to_graph(vi, nodes, edges, True)
         vs.append(vi)
     viz_graph(nodes, edges)
     print(vs)
